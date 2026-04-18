@@ -3,3 +3,5 @@ crushon_cookies.json
 *.docx
 *.log
 ai_companion_apps_verified.processed.txt
+*.pdf
+*.csv

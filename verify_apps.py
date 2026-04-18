@@ -12,7 +12,6 @@ from pathlib import Path
 import pandas as pd
 from tqdm import tqdm
 
-# ── Playwright ────────────────────────────────────────────────────────────────
 try:
     from playwright.async_api import async_playwright, TimeoutError as PWTimeout
     PLAYWRIGHT_AVAILABLE = True
@@ -20,7 +19,6 @@ except ImportError:
     PLAYWRIGHT_AVAILABLE = False
     print("WARNING: playwright not installed. Run: pip install playwright && playwright install chromium")
 
-# ── Google GenAI (new SDK) ────────────────────────────────────────────────────
 try:
     from google import genai
     from google.genai import types as genai_types
@@ -29,7 +27,6 @@ except ImportError:
     GENAI_AVAILABLE = False
     print("WARNING: google-genai not installed. Run: pip install google-genai")
 
-# ── Logging ───────────────────────────────────────────────────────────────────
 # Use utf-8 on both handlers to avoid cp1252 encoding errors on Windows
 _file_handler = logging.FileHandler("verify_apps.log", encoding="utf-8")
 _stream_handler = logging.StreamHandler()
@@ -45,7 +42,6 @@ logging.basicConfig(
 )
 log = logging.getLogger(__name__)
 
-# ── Constants ─────────────────────────────────────────────────────────────────
 MODEL = "gemma-3-12b-it"          # free tier: 30 RPM, 14,400 RPD — much more generous
 MAX_TOKENS = 2048
 PAGE_TIMEOUT_MS = 20_000          # 20s per page load
@@ -103,8 +99,6 @@ RULES:
 - Never invent pricing; only report what you can see on the page or in the description"""
 
 
-# ── Helpers ───────────────────────────────────────────────────────────────────
-
 def clean_text(text: str, limit: int = PAGE_TEXT_LIMIT) -> str:
     """Strip excess whitespace and truncate."""
     text = re.sub(r"\s+", " ", text or "").strip()
@@ -141,8 +135,6 @@ def should_skip(row: pd.Series, force: bool = False) -> bool:
         return True
     return False
 
-
-# ── Page fetching ─────────────────────────────────────────────────────────────
 
 async def fetch_page_text(page, url: str) -> str:
     """Load URL in Playwright and return visible text."""
@@ -187,8 +179,6 @@ async def get_page_texts(browser, row: pd.Series) -> dict:
     await context.close()
     return texts
 
-
-# ── Gemini verification ──────────────────────────────────────────────────────
 
 def verify_with_gemini(model, row: pd.Series, page_texts: dict) -> dict | None:
     """Send app metadata + page text to Gemini Flash and return parsed field dict."""
@@ -258,8 +248,6 @@ Please verify and correct the fields based on all available evidence."""
     log.warning(f"All retries exhausted for '{row['title']}'")
     return None
 
-
-# ── Main pipeline ─────────────────────────────────────────────────────────────
 
 async def process_batch(browser, client, rows: list[pd.Series], semaphore: asyncio.Semaphore, results: dict, sidecar_path: Path = None):
     """Process a batch of rows concurrently."""
@@ -358,7 +346,6 @@ async def run(args):
         )
     client = genai.Client(api_key=api_key)
 
-    # ── Quick preflight to validate the key ──────────────────────────────────
     log.info("Validating Gemini API key...")
     try:
         client.models.generate_content(
@@ -421,8 +408,6 @@ def _save_checkpoint(df: pd.DataFrame, results: dict, done_df, out_path: Path):
 
     out.to_csv(out_path, index=False, encoding="utf-8")
 
-
-# ── CLI ───────────────────────────────────────────────────────────────────────
 
 def main():
     parser = argparse.ArgumentParser(description="Verify AI companion app CSV fields")
